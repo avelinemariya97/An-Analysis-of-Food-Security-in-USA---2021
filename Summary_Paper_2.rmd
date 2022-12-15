@@ -21,10 +21,13 @@ editor_options:
     wrap: 72
 ---
 
+***
 
 ### Precap
 
 This paper is an extension to the Exploratory Data Analysis of the **Analysis of Food Security in USA - 2021**. Fr5om the previous analysis, we brought down to 7 variables such as Family_Size, Household_Income, SNAP, Ethnicity, Citizenship_status, Hours_on_Jobs, Education_Level which has an effect on the FoodSecurity_score variable. The extended part will deal different classification techniques/models to predict the food insecurity.
+
+***
 
 #### The models/techniques that we have used here are:
 
@@ -34,6 +37,7 @@ This paper is an extension to the Exploratory Data Analysis of the **Analysis of
  
  -- Decision Tree
 
+***
 
 ### Our SMART questions are below: 
 
@@ -46,6 +50,8 @@ This paper is an extension to the Exploratory Data Analysis of the **Analysis of
 --	Relevant: Food being the basic requirement of any human, this study can shed light on what the authorities and we ourselves can do in order to eradicate food insecurity.
 
 --	Time-Oriented: Data set for the month of December 2021 is considered for the study and the study is expected to come-up with interesting results by early December 2022.
+
+***
 
 ```{r, echo=FALSE, results='hide', message=FALSE}
 library(dplyr)
@@ -60,6 +66,8 @@ library(caret)
 library(car)
 ```
 
+***
+
 ### Dataset
 
 We have obtained the data from the US Census website using CPS data. The CSV file contains approximately a hundred thousand observations. 
@@ -67,11 +75,13 @@ We have obtained the data from the US Census website using CPS data. The CSV fil
 The link to our dataset is: 
 https://www2.census.gov/programs-surveys/cps/datasets/2021/supp/dec21pub.csv
 
+***
+
 ```{r, echo=FALSE, cache=TRUE }
 Food_Sec <- data.frame(read.csv("dec21pub.csv"))
 ```
 
-```{r, results='markup', echo=FALSE}
+```{r, echo=FALSE, results='hide', message=FALSE}
 
 
 FS_Subset <- subset(Food_Sec, HRINTSTA == 001 & HRSUPINT == 001 & HRFS12MD != -9)
@@ -86,7 +96,7 @@ FS_Subset <- FS_Subset %>% rename("States" = "GESTFIPS", "Family_Size" = "HRNUMH
 
 Converting all the columns to factors as they are all ordinal and looking at the data features
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, results='hide', message=FALSE}
 ## Converting the all the columns to factors as they are all ordinal(except the Id, but since it's categorical i'm converting it into a factor too)
 
 
@@ -98,7 +108,7 @@ str(FS_Subset)
 
 # Data Pre-processing
 
-```{r, results='markup', echo=FALSE, results='hide'}
+```{r, echo=FALSE, results='hide', message=FALSE}
 levels(FS_Subset$'FoodSecurity_score') <- c( "High Food Security", "Marginal Food Security", "Low Food Security", "Very Low Food Security")
 
 
@@ -115,7 +125,7 @@ summary(FS_Subset$'Citizenship_status', title = "PRCITSHP")
 ```
 
 Now we clean the data and make sure that, we select variables which are necessary for the models are chosen.
-```{r, results='markup'}
+```{r, echo=FALSE, results='hide', message=FALSE}
 table(FS_Subset$Ethnicity)
 
 ## Lets drop all levels that have less than 10 observations.
@@ -137,9 +147,9 @@ table(FS_Subset$Ethnicity)
 
 # Splitting the data
 
-Now we select a sample from the data inorder to work on the models so that the parent data will remain as it is.
+Now we select a sample from the data in order to work on the models so that the parent data will remain as it is.
 
-```{r, results ='markup'}
+```{r, echo=FALSE, results='hide', message=FALSE}
 set.seed(1)
 
 sample <- sample(c(TRUE, FALSE), nrow(FS_Subset), replace = TRUE, prob = c(0.6, 0.4))
@@ -153,7 +163,7 @@ str(train)
 
 We now started by adding all the variables to logistic regression to see what happens.We later take out some predictors and add others or add interaction terms.
 
-```{r, results='markup'}
+```{r, echo=FALSE, results='hide', message=FALSE}
 logistic <- glm(FS_Status ~ Ethnicity +  Family_Size + Household_Income:SNAP + Citizenship_status + Number_of_Jobs + Education_Level   , data = train, family = "binomial")
 ```
 
@@ -246,7 +256,7 @@ sum(test$FS_Status == "Food Secure")/sum(test$FS_Status == "Food Insecure")
 #### I am going to be adding weights to the data so our minority class, which is food insecurity, affects the model more.
 
 
-```{r, results='markup', cache = TRUE}
+```{r, echo=FALSE, results='hide', message=FALSE, cache = TRUE}
 weight_minority_class = sum(FS_Subset$FS_Status == "Food Secure")/sum(FS_Subset$FS_Status == "Food Insecure")
 for(i in seq_len(NROW(FS_Subset))){
   
@@ -274,7 +284,7 @@ test  <- FS_Subset[!sample, ]
 
 
 
-```{r, results='markup'}
+```{r, echo=FALSE, results='hide', message=FALSE}
 
 logistic_weighted <- glm(FS_Status ~ Ethnicity +  Family_Size + Household_Income:SNAP + Citizenship_status + Number_of_Jobs + Education_Level   , data = train,  weights = Weight, family = "binomial")
 
@@ -347,7 +357,7 @@ theme_economist()
 
 * Trying to balance data by undersampling 
 
-```{r,results='markup'}
+```{r,echo=FALSE, results='hide', message=FALSE}
 
 data.balanced.ou <- ovun.sample(FS_Status~., data=train, p=0.5,  seed=1, method="under")$data
 
@@ -356,7 +366,7 @@ data.balanced.ou <- ovun.sample(FS_Status~., data=train, p=0.5,  seed=1, method=
 
 ```
 
-```{r, results = 'markup'}
+```{r, echo=FALSE, results='hide', message=FALSE}
 logistic_both <- glm(FS_Status ~ Ethnicity + Family_Size + Household_Income:SNAP + Citizenship_status + Number_of_Jobs + Education_Level   , data = data.balanced.ou,   family = "binomial")
 
 ```
@@ -399,13 +409,11 @@ Here we will try to create a prediction model using KNN Algorithm and we hope to
 
 # Preparing Data for KNN
 
-```{r, results='markup'}
-str(FS_Subset)
-```
 
 
 
-```{r, results='markup'}
+
+```{r, echo=FALSE, results='hide', message=FALSE}
 knn_data <- FS_Subset
 knn_data$Family_Size <- as.numeric(FS_Subset$Family_Size)
 knn_data$Household_Income <- as.numeric(FS_Subset$Household_Income)
@@ -420,7 +428,7 @@ str(num_data)
 ```
 
 
-```{r, results='markup'}
+```{r, echo=FALSE, results='hide', message=FALSE}
 num_data$FS_Status <- replace(num_data$FS_Status, num_data$FS_Status == 1, 3)
 num_data$FS_Status <- replace(num_data$FS_Status, num_data$FS_Status == 2, 1)
 num_data$FS_Status <- replace(num_data$FS_Status, num_data$FS_Status == 3, 2)
@@ -435,11 +443,11 @@ tail(num_data)
 library(ROSE)
 ```
 
-```{r, results='markup'}
+```{r, echo=FALSE, results='hide', message=FALSE}
 data_balanced_under <- as.data.frame(ovun.sample(FS_Status ~ ., data = num_data, method = "both", N = nrow(num_data), seed = 1)$data)
 table(data_balanced_under$FS_Status)
 ```
-```{r,results='markup'}
+```{r,echo=FALSE, results='hide', message=FALSE}
 str(data_balanced_under)
 head(data_balanced_under)
 tail(data_balanced_under)
@@ -448,26 +456,26 @@ num_data <- data_balanced_under
 
 First we want to scale and center the data to ensure KNN will operate correctly.
 
-```{r, results='markup'}
+```{r, echo=FALSE, results='hide', message=FALSE}
 scaledata <- as.data.frame(scale(num_data, center = TRUE, scale = TRUE))
 ```
 
 We also need to create test and train data sets, we will do this slightly differently by using the sample function. The 2 says create 2 data sets essentially, replacement means we can reset the random sampling across each vector and the probability gives sample the weight of the splits, 2/3 for train, 1/3 for test.
 
-```{r, results='markup'}
+```{r, echo=FALSE, results='hide', message=FALSE}
 set.seed(1000)
 knn_sample <- sample(2, nrow(scaledata), replace=TRUE, prob=c(0.67, 0.33))
 ```
 We then just need to use the new variable to create the test/train outputs, selecting the first four rows as they are the numeric data in the iris data set and we want to predict Species.
 
-```{r, results='markup'}
+```{r, echo=FALSE, results='hide', message=FALSE}
 knn_training <- scaledata[knn_sample==1, 1:6]
 knn_test <- scaledata[knn_sample==2, 1:6]
 ```
 
 Now we need to create our Y variables or labels need to input into the KNN function.
 
-```{r, results='markup'}
+```{r, echo=FALSE, results='hide', message=FALSE}
 knn.trainLabels <- num_data[knn_sample==1, 7]
 knn.testLabels <- num_data[knn_sample==2, 7]
 ```
@@ -485,7 +493,7 @@ loadPkg("caret")
 
 # Building Models
 
-```{r, results='markup'}
+```{r, echo=FALSE, results='hide', message=FALSE}
 library(class)
 knn_pred <- knn(train = knn_training, test = knn_test, cl=knn.trainLabels, k=3)
 #knn_pred
