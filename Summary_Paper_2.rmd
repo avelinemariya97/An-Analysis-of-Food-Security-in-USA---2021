@@ -478,12 +478,14 @@ library(class)
 
 # Building KNN Model
 
+
 ```{r, results='markup', echo=FALSE, eval=FALSE}
-for (kval in 3:15) 
+for (kval in 3:16) 
   {
+  print( paste("k = ", kval) )
   knn_pred <- knn(train = knn_training, test = knn_test, cl=knn.trainLabels, k=kval)
   knn_crosst <- CrossTable(knn.testLabels, knn_pred, prop.chisq = FALSE)
-  print( paste("k = ", kval) )
+  
   knn_crosst
   # 
   cm = confusionMatrix(knn_pred, reference = as.factor(knn.testLabels )) # from caret library
@@ -502,37 +504,28 @@ for (kval in 3:15)
   }
 ```
 
-```{r, results='markup'}
+```{r, results='markup', echo=FALSE}
 xkabledply(ResultDf, "Total Accuracy Summary")
 ```
 
-```{r, results='markup'}
+```{r, results='markup', echo=FALSE}
 ggplot(ResultDf,aes(x = k, y = Total.Accuracy)) +
   geom_line(color = "maroon", size = 1.5) +
   geom_point(size = 3) + 
   labs(title = "Accuracy vs k")
 ```
-```{r, results='markup'}
+
+```{r, results='markup', echo=FALSE}
 library(class)
 knn_pred <- knn(train = knn_training, test = knn_test, cl=knn.trainLabels, k=6)
-#knn_pred
+knn_crosst <- gmodels::CrossTable(x = knn.testLabels, y = knn_pred, prop.chisq = FALSE)
+
 ```
 
-```{r, results='markup'}
-knn_crosst <- gmodels::CrossTable(x = knn.testLabels, y = knn_pred, prop.chisq = FALSE)
-```
 ```{r, results='markup'}
 xkabledply(data.frame(cm$byClass), title=paste("k = ",6))
 ```
 
-
-```{r, results='markup'}
-knn_pred <- knn(train = knn_training, test = knn_test, cl=knn.trainLabels, k=3)
-```
-
-```{r, results='markup'}
-knn_crosst <- gmodels::CrossTable(x = knn.testLabels, y = knn_pred, prop.chisq = FALSE)
-```
 Total Number of Observations = 23430.
 True Negative = 11040 :- 47% of the observations were correctly predicted as NOT Food Insecure
 True Positive = 8537 :- 36.45% are correctly identified as Food Insecure.
@@ -544,37 +537,6 @@ The total accuracy of the model is 83.59 % ((TN+TP)/Total) which shows that the 
 # create an empty dataframe to store the results from confusion matrices
 ResultDf = data.frame( k=numeric(0), Total.Accuracy= numeric(0), row.names = NULL )
 ```
-
-
-```{r, results='markup'}
-library(caret)
-cm <- confusionMatrix(knn_pred, reference = as.factor(knn.testLabels) ) 
-# print.confusionMatrix(cm)
-# 
-cmaccu = cm$overall['Accuracy']
-print( paste("Total Accuracy = ", cmaccu ) )
-# print("Other metrics : ")
-# print(cm$byClass)
-kval = 3
-cmt = data.frame(k=kval, Total.Accuracy = cmaccu, row.names = NULL ) # initialize a row of the metrics 
-# cmt = cbind( cmt, data.frame( t(cm$byClass) ) ) # the dataframe of the transpose, with k valued added in front
-ResultDf = rbind(ResultDf, cmt)
-print( xkabledply(   as.matrix(cm), title = paste("ConfusionMatrix for k = ",kval ) ) )
-```
-```{r, results='markup'}
-# print("Other metrics : ")
-# print(cm$byClass)
-# 
-cmt = data.frame(k=kval, Total.Accuracy = cmaccu, row.names = NULL ) # initialize a row of the metrics 
-# cmt = cbind( cmt, data.frame( t(cm$byClass) ) ) # the dataframe of the transpose, with k valued added in front
-ResultDf = rbind(ResultDf, cmt)
-print( xkabledply(   as.matrix(cm), title = paste("ConfusionMatrix for k = ",kval ) ) )
-```
-```{r, results='markup'}
-print( xkabledply(data.frame(cm$byClass), title=paste("k = ",kval)) )
-```
-
-# Different K-values
 
 ## Trees
 
