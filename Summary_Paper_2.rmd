@@ -629,7 +629,7 @@ table_mat[2:1,2:1]
 
 #### Conclusions and further recommendations
 
-SNAP is the most important factor in food security in our models. In future, we could focus on SNAP alone and make analysis. Also, COVID might have affected to insecurity in families because kids were staying home. But we didn't include this factor in this research.         
-KNN performs better than other models for these factors.     
-We need to explore the data more in depth and explore previous years’ data to create comparison.    
+SNAP is the most important factor in food security in our models. In future, We could remove SNAP or take SNAP longitudinally to make some analysis; as the correlation between SNAP and food insecurity is almost tautological - Only a food insecure person would have SNAP and Food secure person won't have SNAP.
+
+We saw that KNN performs better than other models for these factors.
 
