@@ -25,7 +25,7 @@ editor_options:
 
 # Precap
 
-This paper is an extension to the Exploratory Data Analysis of the **Analysis of Food Security in USA - 2021**. Fr5om the previous analysis, we brought down to 7 variables such as Family_Size, Household_Income, SNAP, Ethnicity, Citizenship_status, Hours_on_Jobs, Education_Level which has an effect on the FoodSecurity_score variable. The extended part will deal different classification techniques/models to predict the food insecurity.
+This paper is an extension to the Exploratory Data Analysis of the **Analysis of Food Security in USA - 2021**. From the previous analysis, we brought down to 7 variables such as Family_Size, Household_Income, SNAP, Ethnicity, Citizenship_status, Hours_on_Jobs, Education_Level which has an effect on the FoodSecurity_score variable. The extended part will deal different classification techniques/models to predict the food insecurity.
 
 ***
 
@@ -259,7 +259,7 @@ The ration of Food Secure to Food Insecure in our data is 9.03. We are gonna add
 
 ***
 
-* **I am going to be adding weights to the data so our minority class, which is food insecurity, affects the model more**.
+* **We are going to be adding weights to the data so our minority class, which is food insecurity, affects the model more**.
 
 
 ```{r, echo=FALSE, results='hide', message=FALSE, cache = TRUE}
@@ -444,7 +444,7 @@ str(num_data)
 
 ##### Balanced Data for KNN
 
-The data is unbalanced. The number of food secure units of observations are very few when compared to food secured. This issue is resolved in Logstic Regression by adding weights as a hypervariable. But for KNN, sampling methods needs to be used to resolve this isse. The two options are Under-sampling and Up-sampling. Even though, new methods are coming out like creating artificial data points, the accuracy of the model through such model is still debatable. 
+The data is unbalanced as we mentioned above. The number of food secure units of observations are very few when compared to food secured. This issue is resolved in Logstic Regression by adding weights as a hypervariable. But for KNN, sampling methods needs to be used to resolve this isse. The two options are Under-sampling and Up-sampling. Even though, new methods are coming out like creating artificial data points, the accuracy of the model through such model is still debatable. 
 
 This does not hide the fact that under-sampling can lead to data lose as we are discarding a lot of observation units and up-sampling will cause over-fitting in the model. Trying both techniques and finding the best model is a considerable solution but it depends on the resources and time. 
 
@@ -594,7 +594,6 @@ table_mat[2:1,2:1]
 ```
 
 
-
 ```{r}
 accuracy_tune <- function(tree1) {
     predict_unseen <- predict(tree1, test, type = 'class')
@@ -621,9 +620,16 @@ plotcp(tree2)
 rpart.plot(tree2)
 ```
 
+
 ```{r, results='markup'}
 predict_unseen <-predict(tree2, test, type = 'class')
 table_mat <- table(predict_unseen, test$FS_Status)
 table_mat[2:1,2:1]
 ```
+
+#### Conclusions and further recommendations
+
+SNAP is the most important factor in food security in our models. In future, we could focus on SNAP alone and make analysis. Also, COVID might have affected to insecurity in families because kids were staying home. But we didn't include this factor in this research.         
+KNN performs better than other models for these factors.     
+We need to explore the data more in depth and explore previous years’ data to create comparison.    
 
