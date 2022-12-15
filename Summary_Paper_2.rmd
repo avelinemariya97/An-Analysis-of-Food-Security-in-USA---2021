@@ -23,7 +23,7 @@ editor_options:
 
 ***
 
-### Precap
+# Precap
 
 This paper is an extension to the Exploratory Data Analysis of the **Analysis of Food Security in USA - 2021**. Fr5om the previous analysis, we brought down to 7 variables such as Family_Size, Household_Income, SNAP, Ethnicity, Citizenship_status, Hours_on_Jobs, Education_Level which has an effect on the FoodSecurity_score variable. The extended part will deal different classification techniques/models to predict the food insecurity.
 
@@ -39,7 +39,7 @@ This paper is an extension to the Exploratory Data Analysis of the **Analysis of
 
 ***
 
-### Our SMART questions are below: 
+# Our SMART questions are below: 
 
 --	Specific: To extend the EDA on the Census data to find out what combinations of socio-economic factors lead to food insecurity. 
 
@@ -64,11 +64,13 @@ library(ROSE)
 library(ggthemes)
 library(caret)
 library(car)
+library(ROSE)
+
 ```
 
 ***
 
-### Dataset
+# Dataset
 
 We have obtained the data from the US Census website using CPS data. The CSV file contains approximately a hundred thousand observations. 
 
@@ -143,13 +145,14 @@ table(FS_Subset$Ethnicity)
 
 
 
-## LOGISTIC REGRESSION
+# LOGISTIC REGRESSION
 
-# Splitting the data
+A sort of generalized linear model (GLM) called logistic regression is used in statistical analysis to forecast a binary event (i.e., dependent variable) based on predetermined variables. It estimates the likelihood that an event will occur by fitting data to a logit function.
 
-Now we select a sample from the data in order to work on the models so that the parent data will remain as it is.
+In this model, the binary outcome is whether the unit of observation (individuals within housing units) is Food Secure or not. The variables in the model will try to predict the binary outcome. Also, the data set used in the model is unbalanced. Hence we use weights in Logistic Regression. 
 
-```{r, echo=FALSE, results='hide', message=FALSE}
+In this model, we also use weights 
+```{r, results ='markup'}
 set.seed(1)
 
 sample <- sample(c(TRUE, FALSE), nrow(FS_Subset), replace = TRUE, prob = c(0.6, 0.4))
@@ -403,17 +406,15 @@ scale_color_economist( name = "data", labels = c( "Food Secure", "Food Insecure"
 theme_economist()
 ```
 
-## K-Nearest Neighbours
+## K-Nearest Neighbors
 
-Here we will try to create a prediction model using KNN Algorithm and we hope to see a model with more accuracy and precision. 
+K-Nearest Neighbor is a Supervised ML Algorithm used to solve both Classification and Regression models. K-NN algorithm assumes the similarity between the new case /data and available cases and put the new case into the category that is most similar to the available categories.It is also called a lazy learner algorithm because it does not learn from the training set immediately instead it stores the dataset and at the time of classification, it performs an action on the dataset. KNN models shows high accuracy for classification problems.
 
 # Preparing Data for KNN
 
-
-
-
-
-```{r, echo=FALSE, results='hide', message=FALSE}
+The preparation of Data for KNN starts with selecting variables. As KNN only accepts numeric variables in or it needs to be transformed to numeric. Since only ordinal variables can be transformed to numeric, we eliminate nominal variables and hence, the list of variables used for KNN model are - Family Size, Household Income, SNAP, Number of jobs, Hours of Job, Number of Children. The predicting variable FS_Status remains binary but numeric.
+ 
+```{r, results='markup', echo=FALSE}
 knn_data <- FS_Subset
 knn_data$Family_Size <- as.numeric(FS_Subset$Family_Size)
 knn_data$Household_Income <- as.numeric(FS_Subset$Household_Income)
@@ -424,58 +425,51 @@ knn_data$Number_of_children <- as.numeric(FS_Subset$Number_of_children)
 knn_data$FS_Status <- as.numeric(FS_Subset$FS_Status)
 num_data <- select_if(knn_data, is.numeric)
 num_data <- as.data.frame(num_data[-c(8)])
-str(num_data)
-```
-
-
-```{r, echo=FALSE, results='hide', message=FALSE}
 num_data$FS_Status <- replace(num_data$FS_Status, num_data$FS_Status == 1, 3)
 num_data$FS_Status <- replace(num_data$FS_Status, num_data$FS_Status == 2, 1)
 num_data$FS_Status <- replace(num_data$FS_Status, num_data$FS_Status == 3, 2)
 num_data$FS_Status <- replace(num_data$FS_Status, num_data$FS_Status == 2, 0)
-
-head(num_data)
-tail(num_data)
+str(num_data)
 ```
 
+# Balanced Data for KNN
 
-```{r}
-library(ROSE)
-```
+The data is unbalanced. The number of food secure units of observations are very few when compared to food secured. This issue is resolved in Logstic Regression by adding weights as a hypervariable. But for KNN, sampling methods needs to be used to resolve this isse. The two options are Under-sampling and Up-sampling. Even though, new methods are coming out like creating artificial data points, the accuracy of the model through such model is still debatable. 
 
-```{r, echo=FALSE, results='hide', message=FALSE}
+This does not hide the fact that under-sampling can lead to data lose as we are discarding a lot of observation units and up-sampling will cause over-fitting in the model. Trying both techniques and finding the best model is a considerable solution but it depends on the resources and time. 
+
+For the KNN model discussed below, we choose for Under-sampling. The results based on the under-sampled data are discussed here. The number of observations that are Food secure and Food insecure is now 35635 and 35837 respectively. Now the data is balanced and we continue with data pre-processing. 
+
+```{r, results='markup', echo=FALSE}
 data_balanced_under <- as.data.frame(ovun.sample(FS_Status ~ ., data = num_data, method = "both", N = nrow(num_data), seed = 1)$data)
 table(data_balanced_under$FS_Status)
 ```
-```{r,echo=FALSE, results='hide', message=FALSE}
-str(data_balanced_under)
-head(data_balanced_under)
-tail(data_balanced_under)
+```{r,results='markup', echo=FALSE}
 num_data <- data_balanced_under
+str(num_data)
 ```
 
-First we want to scale and center the data to ensure KNN will operate correctly.
+For preparing the data for KNN, we selected numerical variables. Scaling the data is the next step. The algorithm should not be biased towards variables with higher magnitude. To overcome this problem, bring down all the variables to the same scale. Feature Scaling is inevitable for KNN. If not scaled, the feature with large value range will dominate while calculating distances. KNN which uses Euclidean distance needs scaling when the features has a broad range of values.
 
 ```{r, echo=FALSE, results='hide', message=FALSE}
 scaledata <- as.data.frame(scale(num_data, center = TRUE, scale = TRUE))
+str(scaledata)
 ```
 
-We also need to create test and train data sets, we will do this slightly differently by using the sample function. The 2 says create 2 data sets essentially, replacement means we can reset the random sampling across each vector and the probability gives sample the weight of the splits, 2/3 for train, 1/3 for test.
+We also need to create test and train data sets, we will do this slightly differently by using the sample function. The 2 says create 2 data sets essentially, replacement means we can reset the random sampling across each vector and the probability gives sample the weight of the splits, 2/3 for train, 1/3 for test. So here 67% of the sample is taken as training data and 33% as testing data.
 
 ```{r, echo=FALSE, results='hide', message=FALSE}
 set.seed(1000)
 knn_sample <- sample(2, nrow(scaledata), replace=TRUE, prob=c(0.67, 0.33))
 ```
-We then just need to use the new variable to create the test/train outputs, selecting the first four rows as they are the numeric data in the iris data set and we want to predict Species.
 
-```{r, echo=FALSE, results='hide', message=FALSE}
+We then just need to use the new variable to create the test/train outputs, selecting the first four rows as they are the numeric data in the iris data set and we want to predict Species. And then we need to create our Y variables or labels need to input into the KNN function.
+
+```{r, results='markup', echo=FALSE}
+# X variables
 knn_training <- scaledata[knn_sample==1, 1:6]
 knn_test <- scaledata[knn_sample==2, 1:6]
-```
-
-Now we need to create our Y variables or labels need to input into the KNN function.
-
-```{r, echo=FALSE, results='hide', message=FALSE}
+# Y variable
 knn.trainLabels <- num_data[knn_sample==1, 7]
 knn.testLabels <- num_data[knn_sample==2, 7]
 ```
@@ -489,67 +483,19 @@ loadPkg("gmodels")
 loadPkg("gmodels")
 loadPkg("FNN")
 loadPkg("caret")
-```
-
-# Building Models
-
-```{r, echo=FALSE, results='hide', message=FALSE}
 library(class)
-knn_pred <- knn(train = knn_training, test = knn_test, cl=knn.trainLabels, k=3)
-#knn_pred
 ```
 
-```{r, results='markup'}
-knn_crosst <- gmodels::CrossTable(x = knn.testLabels, y = knn_pred, prop.chisq = FALSE)
-```
-Total Number of Observations = 23430.
-True Negative = 11040 :- 47% of the observations were correctly predicted as NOT Food Insecure
-True Positive = 8537 :- 36.45% are correctly identified as Food Insecure.
-There were 3164 cases of False Negatives (FN). The FN’s poses a potential threat for the reason that model predicts 13.50% of the total observations as Food Secure, but was actually food insecure and the main focus to increase the accuracy of the model is to reduce FN’s.
-There were 679 cases of False Positives (FP) meaning 679 cases were actually food secure in nature but got predicted as food insecure. 
-The total accuracy of the model is 83.59 % ((TN+TP)/Total) which shows that the model is good. But still there is scope of improvement.
-
-```{r, results='markup'}
-# create an empty dataframe to store the results from confusion matrices
-ResultDf = data.frame( k=numeric(0), Total.Accuracy= numeric(0), row.names = NULL )
-```
+# Building KNN Model
 
 
-```{r, results='markup'}
-library(caret)
-cm <- confusionMatrix(knn_pred, reference = as.factor(knn.testLabels) ) 
-# print.confusionMatrix(cm)
-# 
-cmaccu = cm$overall['Accuracy']
-print( paste("Total Accuracy = ", cmaccu ) )
-# print("Other metrics : ")
-# print(cm$byClass)
-kval = 3
-cmt = data.frame(k=kval, Total.Accuracy = cmaccu, row.names = NULL ) # initialize a row of the metrics 
-# cmt = cbind( cmt, data.frame( t(cm$byClass) ) ) # the dataframe of the transpose, with k valued added in front
-ResultDf = rbind(ResultDf, cmt)
-print( xkabledply(   as.matrix(cm), title = paste("ConfusionMatrix for k = ",kval ) ) )
-```
-```{r, results='markup'}
-# print("Other metrics : ")
-# print(cm$byClass)
-# 
-cmt = data.frame(k=kval, Total.Accuracy = cmaccu, row.names = NULL ) # initialize a row of the metrics 
-# cmt = cbind( cmt, data.frame( t(cm$byClass) ) ) # the dataframe of the transpose, with k valued added in front
-ResultDf = rbind(ResultDf, cmt)
-print( xkabledply(   as.matrix(cm), title = paste("ConfusionMatrix for k = ",kval ) ) )
-```
-```{r, results='markup'}
-print( xkabledply(data.frame(cm$byClass), title=paste("k = ",kval)) )
-```
-
-# Different K-values
-```{r, results='markup'}
-for (kval in 4:11) 
+```{r, results='markup', echo=FALSE, eval=FALSE}
+for (kval in 3:16) 
   {
+  print( paste("k = ", kval) )
   knn_pred <- knn(train = knn_training, test = knn_test, cl=knn.trainLabels, k=kval)
   knn_crosst <- CrossTable(knn.testLabels, knn_pred, prop.chisq = FALSE)
-  print( paste("k = ", kval) )
+  
   knn_crosst
   # 
   cm = confusionMatrix(knn_pred, reference = as.factor(knn.testLabels )) # from caret library
@@ -568,28 +514,40 @@ for (kval in 4:11)
   }
 ```
 
-```{r, results='markup'}
+```{r, results='markup', echo=FALSE}
 xkabledply(ResultDf, "Total Accuracy Summary")
 ```
 
-```{r, results='markup'}
+```{r, results='markup', echo=FALSE}
 ggplot(ResultDf,aes(x = k, y = Total.Accuracy)) +
   geom_line(color = "maroon", size = 1.5) +
   geom_point(size = 3) + 
   labs(title = "Accuracy vs k")
 ```
-```{r, results='markup'}
+
+```{r, results='markup', echo=FALSE}
 library(class)
 knn_pred <- knn(train = knn_training, test = knn_test, cl=knn.trainLabels, k=6)
-#knn_pred
+knn_crosst <- gmodels::CrossTable(x = knn.testLabels, y = knn_pred, prop.chisq = FALSE)
+
 ```
 
 ```{r, results='markup'}
-knn_crosst <- gmodels::CrossTable(x = knn.testLabels, y = knn_pred, prop.chisq = FALSE)
-```
-```{r, results='markup'}
 xkabledply(data.frame(cm$byClass), title=paste("k = ",6))
 ```
+
+Total Number of Observations = 23430.
+True Negative = 11040 :- 47% of the observations were correctly predicted as NOT Food Insecure
+True Positive = 8537 :- 36.45% are correctly identified as Food Insecure.
+There were 3164 cases of False Negatives (FN). The FN’s poses a potential threat for the reason that model predicts 13.50% of the total observations as Food Secure, but was actually food insecure and the main focus to increase the accuracy of the model is to reduce FN’s.
+There were 679 cases of False Positives (FP) meaning 679 cases were actually food secure in nature but got predicted as food insecure. 
+The total accuracy of the model is 83.59 % ((TN+TP)/Total) which shows that the model is good. But still there is scope of improvement.
+
+```{r, results='markup'}
+# create an empty dataframe to store the results from confusion matrices
+ResultDf = data.frame( k=numeric(0), Total.Accuracy= numeric(0), row.names = NULL )
+```
+
 ## Trees
 
 ```{r}
