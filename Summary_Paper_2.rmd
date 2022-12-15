@@ -39,7 +39,7 @@ This paper is an extension to the Exploratory Data Analysis of the **Analysis of
 
 ***
 
-# Our SMART questions are below: 
+#### Our SMART questions are below: 
 
 --	Specific: To extend the EDA on the Census data to find out what combinations of socio-economic factors lead to food insecurity. 
 
@@ -53,7 +53,7 @@ This paper is an extension to the Exploratory Data Analysis of the **Analysis of
 
 ***
 
-```{r, echo=FALSE, results='hide', message=FALSE}
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 library(dplyr)
 library(ezids)
 library(ggplot2)
@@ -70,7 +70,7 @@ library(ROSE)
 
 ***
 
-# Dataset
+#### Dataset
 
 We have obtained the data from the US Census website using CPS data. The CSV file contains approximately a hundred thousand observations. 
 
@@ -94,9 +94,7 @@ FS_Subset <- subset(FS_Subset, select = c(	"GESTFIPS",	"HRNUMHOU",	"HEFAMINC",	"
 FS_Subset <- FS_Subset %>% rename("States" = "GESTFIPS", "Family_Size" = "HRNUMHOU",	"Household_Income" = "HEFAMINC",	"SNAP" = "HESP1",	"Ethnicity" =	"PTDTRACE", "Citizenship_status" = "PRCITSHP",	"Number_of_Jobs" = "PEMJNUM",	"Hours_on_Jobs" = "PEHRUSL1" , "Education_Level" = "PEEDUCA" , "Number_of_children" = "PRNMCHLD",  "FoodSecurity_score" = "HRFS12MD")
 ```
 
-# Features in Previous Dataset.
 
-Converting all the columns to factors as they are all ordinal and looking at the data features
 
 ```{r, echo=FALSE, results='hide', message=FALSE}
 ## Converting the all the columns to factors as they are all ordinal(except the Id, but since it's categorical i'm converting it into a factor too)
@@ -108,7 +106,7 @@ str(FS_Subset)
 
 ```
 
-# Data Pre-processing
+
 
 ```{r, echo=FALSE, results='hide', message=FALSE}
 levels(FS_Subset$'FoodSecurity_score') <- c( "High Food Security", "Marginal Food Security", "Low Food Security", "Very Low Food Security")
@@ -126,7 +124,6 @@ summary(FS_Subset$'Citizenship_status', title = "PRCITSHP")
 
 ```
 
-Now we clean the data and make sure that, we select variables which are necessary for the models are chosen.
 ```{r, echo=FALSE, results='hide', message=FALSE}
 table(FS_Subset$Ethnicity)
 
@@ -145,14 +142,13 @@ table(FS_Subset$Ethnicity)
 
 
 
-# LOGISTIC REGRESSION
+##### Logistic Regression
 
 A sort of generalized linear model (GLM) called logistic regression is used in statistical analysis to forecast a binary event (i.e., dependent variable) based on predetermined variables. It estimates the likelihood that an event will occur by fitting data to a logit function.
 
-In this model, the binary outcome is whether the unit of observation (individuals within housing units) is Food Secure or not. The variables in the model will try to predict the binary outcome. Also, the data set used in the model is unbalanced. Hence we use weights in Logistic Regression. 
+In this model, the binary outcome is whether the unit of observation (individuals within housing units) is Food Secure or not. The variables in the model will try to predict the binary outcome. Since the data set used in the model is unbalanced, we'll use try adding weights to the minority class and try under sampling the majority class to see whether that leads to an improvement in results.
 
-In this model, we also use weights 
-```{r, results ='markup'}
+```{r, results ='hide'}
 set.seed(1)
 
 sample <- sample(c(TRUE, FALSE), nrow(FS_Subset), replace = TRUE, prob = c(0.6, 0.4))
@@ -164,15 +160,15 @@ str(test)
 str(train)
 ```
 
-We now started by adding all the variables to logistic regression to see what happens.We later take out some predictors and add others or add interaction terms.
+
 
 ```{r, echo=FALSE, results='hide', message=FALSE}
 logistic <- glm(FS_Status ~ Ethnicity +  Family_Size + Household_Income:SNAP + Citizenship_status + Number_of_Jobs + Education_Level   , data = train, family = "binomial")
 ```
 
-## Results of Logistics Regression Model
+***
 
-The model is predicting on the testing data and finding the mean squared error.
+The model is predicting on the testing data, the cutoff is at 0.5
 
 ```{r, results='markup'}
 
@@ -196,8 +192,13 @@ text(x = p, y = lg_model_graph -  2, labels = lg_model_graph)
 
 ```
 
+*** 
 
-After intense research and discussion, we decided that recall is important to us as we want to get our false negative lower as possible. False positives are inclusion errors, while false negatives are exclusion errors. It's better if we are able to more accurately identify who all are food insecure and need of aid rather than identifying who all are not food insecure and hence don't need aid.
+We decided that recall is important to us as we want to get our false negative lower as possible. False positives are inclusion errors, while false negatives are exclusion errors. It's better if we are able to more accurately identify who all are food insecure and need of aid rather than identifying who all are not food insecure and hence don't need aid.
+
+***
+
+Lets look at the probability distribution of the our two response classes in our training dataset. We'll select a new cutoff from this
 
 ```{r, results='markup'}
 train$logistic_model1_train.prob <- predict(logistic, train, type = "response")
@@ -210,6 +211,9 @@ scale_color_economist( name = "data", labels = c( "Food Secure", "Food Insecure"
 theme_economist()
 
 ```
+We can see that the probability distribution is heavily right skewed. In our next attempt we will select the cutoff at 0.09.
+
+***
 
 ```{r, results='markup'}
 test$logistic_model1.prob <- logistic_model1.prob
@@ -220,8 +224,11 @@ auc(roc_model1)
 
 ```
 
+The area under curve is 0.87. Even though this seems good, but since our classes are imbalanced we can't put much significance to this metric in comparing different models.
 
-Now we change the cutoff
+***
+
+Now we change the cutoff to 0.09
 
 
 ```{r, results='markup'}
@@ -243,20 +250,16 @@ p <- barplot(as.matrix(lg_model_graph),beside=TRUE, col=rgb(0.2,0.3,0.6,0.6), sp
 text(x = p, y = lg_model_graph -  2, labels = lg_model_graph)
 ```
 
-```{r results='markup'}
-sum(test$FS_Status == "Food Secure")/sum(test$FS_Status == "Food Insecure")
+As you can see our recall has increased to 94.2%, while our precision has come down to 25.9%. We think this is better than our previous model since the previous model had just a recall of 5%.
 
-```
+***
 
-* So, our model has a 90% classification rate but the ratio of Food secure to Insecure in our data is 9.2. so this is a terrible model that's as good as tossing a coin. We will have to do something about the imbalance in our response and will have to clean our data further. Since all our variables are categorical of some kind, I highly recommend reading about categorical data modelling to figure out what to do.
-
-* I think doing one-hot encoding(dummy variable) will help in dealing with the level issues in our predictors. We should also combine similar levels so we can reduce the number of levels. also the negative values which correspond to not in the universe or similar have to be dealt with in someway. we can either choose to omit those observation or try to find a proxy for them. I will prefer the latter.
-
-* For the response variable imbalance we can create a new samples where the distribution between the responses is equal. Maybe something like k-fold Cross-Validation would work but I am not sure and would have to read more about it. 
+The ration of Food Secure to Food Insecure in our data is 9.03. We are gonna add a weight equivalent to that to our minority class.
 
 
+***
 
-#### I am going to be adding weights to the data so our minority class, which is food insecurity, affects the model more.
+* **I am going to be adding weights to the data so our minority class, which is food insecurity, affects the model more**.
 
 
 ```{r, echo=FALSE, results='hide', message=FALSE, cache = TRUE}
@@ -317,11 +320,13 @@ text(x = p, y = lg_model_graph -  2, labels = lg_model_graph)
 
 
 ```
-* Our precision for this model is `r 2635/(2635+7474)`
 
-* Our recall for this model is `r 2635/(2635+173)`
 
 * As you can see even though our classification rate of the model went down and the precision of model went down drastically, we were able to raise our recall rate significantly. 
+
+* But this result is almost the same as the one we got from the model where we changed the cutoff to 0.09. 
+
+***
 
 ```{r, results='markup'}
 test$logistic_model2.prob <- logistic_model2.prob
@@ -333,6 +338,11 @@ auc(roc_model2)
 
 ```
 
+* The response probability distribution of this model looks very different from the previous models. We can clearly see two response classes are clearly separated for most part. 
+
+* The little overlap that is visible may be due to the fact that our response originally had 4 classes but we had converted it into binary.
+
+***
 
 ```{r, results='markup'}
 
@@ -348,17 +358,10 @@ theme_economist()
 
 ```
 
-***
-
-* I think this is enough for logistic regression. We can try changing and adding more predictors, but largely i think this is enough. I wasn't abe to add a lot of important predictors like ethnicity as the model was giving some errors. We should try to figure out how to solve it.
-
-* We are going to try to do random forests and KNN now.
-
-* Working on the data is still our number 1 priority, if we can figure out factor selection and how to use the factors we can't use rn, that would be more helpful than just getting the model to work.
 
 *** 
 
-* Trying to balance data by undersampling 
+* Trying to balance data by under sampling. We are using the ROSE library to do this
 
 ```{r,echo=FALSE, results='hide', message=FALSE}
 
@@ -396,6 +399,7 @@ p <- barplot(as.matrix(lg_model_graph),beside=TRUE, col=rgb(0.2,0.3,0.6,0.6), sp
 text(x = p, y = lg_model_graph -  2, labels = lg_model_graph)
 
 ```
+* As you can see the results are almost the same as the previous models. 
 
 ```{r, results='markup'}
 train$logistic_model3_train.prob <- predict(logistic_both, train, type = "response")
@@ -406,11 +410,17 @@ scale_color_economist( name = "data", labels = c( "Food Secure", "Food Insecure"
 theme_economist()
 ```
 
-## K-Nearest Neighbors
+* The probability distribution also looks the same as the previous model.
+
+
+***
+
+
+#### K-Nearest Neighbors
 
 K-Nearest Neighbor is a Supervised ML Algorithm used to solve both Classification and Regression models. K-NN algorithm assumes the similarity between the new case /data and available cases and put the new case into the category that is most similar to the available categories.It is also called a lazy learner algorithm because it does not learn from the training set immediately instead it stores the dataset and at the time of classification, it performs an action on the dataset. KNN models shows high accuracy for classification problems.
 
-# Preparing Data for KNN
+##### Preparing Data for KNN
 
 The preparation of Data for KNN starts with selecting variables. As KNN only accepts numeric variables in or it needs to be transformed to numeric. Since only ordinal variables can be transformed to numeric, we eliminate nominal variables and hence, the list of variables used for KNN model are - Family Size, Household Income, SNAP, Number of jobs, Hours of Job, Number of Children. The predicting variable FS_Status remains binary but numeric.
  
@@ -432,7 +442,7 @@ num_data$FS_Status <- replace(num_data$FS_Status, num_data$FS_Status == 2, 0)
 str(num_data)
 ```
 
-# Balanced Data for KNN
+##### Balanced Data for KNN
 
 The data is unbalanced. The number of food secure units of observations are very few when compared to food secured. This issue is resolved in Logstic Regression by adding weights as a hypervariable. But for KNN, sampling methods needs to be used to resolve this isse. The two options are Under-sampling and Up-sampling. Even though, new methods are coming out like creating artificial data points, the accuracy of the model through such model is still debatable. 
 
@@ -474,7 +484,7 @@ knn.trainLabels <- num_data[knn_sample==1, 7]
 knn.testLabels <- num_data[knn_sample==2, 7]
 ```
 
-```{r}
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 # Loading package
 library(e1071)
 library(caTools)
@@ -486,10 +496,13 @@ loadPkg("caret")
 library(class)
 ```
 
-# Building KNN Model
+##### Building KNN Model
+```{r, results='markup'}
+# create an empty dataframe to store the results from confusion matrices
+ResultDf = data.frame( k=numeric(0), Total.Accuracy= numeric(0), row.names = NULL )
+```
 
-
-```{r, results='markup', echo=FALSE, eval=FALSE}
+```{r, results='hide', echo=FALSE}
 for (kval in 3:16) 
   {
   print( paste("k = ", kval) )
@@ -515,6 +528,8 @@ for (kval in 3:16)
 ```
 
 ```{r, results='markup', echo=FALSE}
+ResultDf = rbind(ResultDf, cmt)
+
 xkabledply(ResultDf, "Total Accuracy Summary")
 ```
 
@@ -543,14 +558,11 @@ There were 3164 cases of False Negatives (FN). The FN’s poses a potential thre
 There were 679 cases of False Positives (FP) meaning 679 cases were actually food secure in nature but got predicted as food insecure. 
 The total accuracy of the model is 83.59 % ((TN+TP)/Total) which shows that the model is good. But still there is scope of improvement.
 
-```{r, results='markup'}
-# create an empty dataframe to store the results from confusion matrices
-ResultDf = data.frame( k=numeric(0), Total.Accuracy= numeric(0), row.names = NULL )
-```
 
-## Trees
 
-```{r}
+#### Trees
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 # Loading package
 library("caret")
 library("dplyr")
@@ -570,7 +582,7 @@ library("rpart")
 tree1 <- rpart(FS_Status ~ Ethnicity + Family_Size + Household_Income + SNAP + Citizenship_status + Number_of_Jobs + Education_Level, data=data.balanced.ou, method="class")
 printcp(tree1) # display the results 
 plotcp(tree1) # visualize cross-validation results 
-summary(tree1) # detailed summary of splits
+
 # plot tree 
 plotcp(tree1)
 #text(tree1, use.n=TRUE, all=TRUE, cex=.8)
@@ -602,7 +614,7 @@ accuracy_tune(tune_fit)
 tree2 <- rpart(FS_Status ~ Ethnicity + Family_Size + Household_Income + SNAP + Citizenship_status + Number_of_Jobs + Education_Level, data=data.balanced.ou, method="class", control = control)
 printcp(tree2) # display the results 
 plotcp(tree2) # visualize cross-validation results 
-summary(tree2) # detailed summary of splits
+
 # plot tree 
 plotcp(tree2)
 #text(tree1, use.n=TRUE, all=TRUE, cex=.8)
