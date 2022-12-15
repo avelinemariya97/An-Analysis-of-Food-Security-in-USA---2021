@@ -58,6 +58,8 @@ library(ROSE)
 library(ggthemes)
 library(caret)
 library(car)
+library(ROSE)
+
 ```
 
 # Dataset
@@ -137,12 +139,9 @@ table(FS_Subset$Ethnicity)
 
 A sort of generalized linear model (GLM) called logistic regression is used in statistical analysis to forecast a binary event (i.e., dependent variable) based on predetermined variables. It estimates the likelihood that an event will occur by fitting data to a logit function.
 
-In this model, the binary outcome is whether the unit of observation (individuals within housing units) is Food Secure or not. The variables in the model will try to predict 
+In this model, the binary outcome is whether the unit of observation (individuals within housing units) is Food Secure or not. The variables in the model will try to predict the binary outcome. Also, the data set used in the model is unbalanced. Hence we use weights in Logistic Regression. 
 
-# Splitting the data
-
-Now we select a sample from the data inorder to work on the models so that the parent data will remain as it is.
-
+In this model, we also use weights 
 ```{r, results ='markup'}
 set.seed(1)
 
@@ -397,19 +396,17 @@ scale_color_economist( name = "data", labels = c( "Food Secure", "Food Insecure"
 theme_economist()
 ```
 
-## K-Nearest Neighbours
+## K-Nearest Neighbors
 
-Here we will try to create a prediction model using KNN Algorithm and we hope to see a model with more accuracy and precision. 
+K-Nearest Neighbor is a Supervised ML Algorithm used to solve both Classification and Regression models. K-NN algorithm assumes the similarity between the new case /data and available cases and put the new case into the category that is most similar to the available categories.It is also called a lazy learner algorithm because it does not learn from the training set immediately instead it stores the dataset and at the time of classification, it performs an action on the dataset. KNN models shows high accuracy for classification problems.
+
+Training and testing data - 2:1 proportion of the data (67% as training and 33% as testing data)
 
 # Preparing Data for KNN
 
-```{r, results='markup'}
-str(FS_Subset)
-```
-
-
-
-```{r, results='markup'}
+The preparation of Data for KNN starts with selecting variables. As KNN only accepts numeric variables in or it needs to be transformed to numeric. Since only ordinal variables can be transformed to numeric, we eliminate nominal variables and hence, the list of variables used for KNN model are - Family Size, Household Income, SNAP, Number of jobs, Hours of Job, Number of Children. The predicting variable FS_Status remains binary but numeric.
+ 
+```{r, results='markup', echo=FALSE}
 knn_data <- FS_Subset
 knn_data$Family_Size <- as.numeric(FS_Subset$Family_Size)
 knn_data$Household_Income <- as.numeric(FS_Subset$Household_Income)
@@ -420,45 +417,39 @@ knn_data$Number_of_children <- as.numeric(FS_Subset$Number_of_children)
 knn_data$FS_Status <- as.numeric(FS_Subset$FS_Status)
 num_data <- select_if(knn_data, is.numeric)
 num_data <- as.data.frame(num_data[-c(8)])
-str(num_data)
-```
-
-
-```{r, results='markup'}
 num_data$FS_Status <- replace(num_data$FS_Status, num_data$FS_Status == 1, 3)
 num_data$FS_Status <- replace(num_data$FS_Status, num_data$FS_Status == 2, 1)
 num_data$FS_Status <- replace(num_data$FS_Status, num_data$FS_Status == 3, 2)
 num_data$FS_Status <- replace(num_data$FS_Status, num_data$FS_Status == 2, 0)
-
-head(num_data)
-tail(num_data)
+str(num_data)
 ```
 
+# Balanced Data for KNN
 
-```{r}
-library(ROSE)
-```
+The data is unbalanced. The number of food secure units of observations are very few when compared to food secured. This issue is resolved in Logstic Regression by adding weights as a hypervariable. But for KNN, sampling methods needs to be used to resolve this isse. The two options are Under-sampling and Up-sampling. Even though, new methods are coming out like creating artificial data points, the accuracy of the model through such model is still debatable. 
 
-```{r, results='markup'}
+This does not hide the fact that under-sampling can lead to data lose as we are discarding a lot of observation units and up-sampling will cause over-fitting in the model. Trying both techniques and finding the best model is a considerable solution but it depends on the resources and time. 
+
+For the KNN model discussed below, we choose for Under-sampling. The results based on the under-sampled data are discussed here. The number of observations that are Food secure and Food insecure is now 35635 and 35837 respectively. Now the data is balanced and we continue with data pre-processing. 
+
+```{r, results='markup', echo=FALSE}
 data_balanced_under <- as.data.frame(ovun.sample(FS_Status ~ ., data = num_data, method = "both", N = nrow(num_data), seed = 1)$data)
 table(data_balanced_under$FS_Status)
 ```
-```{r,results='markup'}
-str(data_balanced_under)
-head(data_balanced_under)
-tail(data_balanced_under)
+```{r,results='markup', echo=FALSE}
 num_data <- data_balanced_under
+str(num_data)
 ```
 
-First we want to scale and center the data to ensure KNN will operate correctly.
+For preparing the data for KNN, we selected numerical variables. Scaling the data is the next step. The algorithm should not be biased towards variables with higher magnitude. To overcome this problem, bring down all the variables to the same scale. Feature Scaling is inevitable for KNN. If not scaled, the feature with large value range will dominate while calculating distances. KNN which uses Euclidean distance needs scaling when the features has a broad range of values.
 
-```{r, results='markup'}
+```{r, results='markup', echo=FALSE}
 scaledata <- as.data.frame(scale(num_data, center = TRUE, scale = TRUE))
 ```
 
 We also need to create test and train data sets, we will do this slightly differently by using the sample function. The 2 says create 2 data sets essentially, replacement means we can reset the random sampling across each vector and the probability gives sample the weight of the splits, 2/3 for train, 1/3 for test.
 
-```{r, results='markup'}
+```{r, results='markup',echo=FALSE}
 set.seed(1000)
 knn_sample <- sample(2, nrow(scaledata), replace=TRUE, prob=c(0.67, 0.33))
 ```
