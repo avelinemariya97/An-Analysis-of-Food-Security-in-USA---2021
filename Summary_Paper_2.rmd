@@ -22,11 +22,11 @@ editor_options:
 ---
 
 
-### Precap
+# Precap
 
 This paper is an extension to the Exploratory Data Analysis of the **Analysis of Food Security in USA - 2021**. Fr5om the previous analysis, we brought down to 7 variables such as Family_Size, Household_Income, SNAP, Ethnicity, Citizenship_status, Hours_on_Jobs, Education_Level which has an effect on the FoodSecurity_score variable. The extended part will deal different classification techniques/models to predict the food insecurity.
 
-#### The models/techniques that we have used here are:
+# The models/techniques that we have used here are:
 
  -- Logistic Regression
  
@@ -35,7 +35,7 @@ This paper is an extension to the Exploratory Data Analysis of the **Analysis of
  -- Decision Tree
 
 
-### Our SMART questions are below: 
+# Our SMART questions are below: 
 
 --	Specific: To extend the EDA on the Census data to find out what combinations of socio-economic factors lead to food insecurity. 
 
@@ -60,7 +60,7 @@ library(caret)
 library(car)
 ```
 
-### Dataset
+# Dataset
 
 We have obtained the data from the US Census website using CPS data. The CSV file contains approximately a hundred thousand observations. 
 
@@ -133,7 +133,11 @@ table(FS_Subset$Ethnicity)
 
 
 
-## LOGISTIC REGRESSION
+# LOGISTIC REGRESSION
+
+A sort of generalized linear model (GLM) called logistic regression is used in statistical analysis to forecast a binary event (i.e., dependent variable) based on predetermined variables. It estimates the likelihood that an event will occur by fitting data to a logit function.
+
+In this model, the binary outcome is whether the unit of observation (individuals within housing units) is Food Secure or not. The variables in the model will try to predict 
 
 # Splitting the data
 
