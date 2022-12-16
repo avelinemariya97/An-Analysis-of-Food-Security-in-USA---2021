@@ -448,7 +448,7 @@ The data is unbalanced as we mentioned above. The number of food secure units of
 
 This does not hide the fact that under-sampling can lead to data lose as we are discarding a lot of observation units and up-sampling will cause over-fitting in the model. Trying both techniques and finding the best model is a considerable solution but it depends on the resources and time. 
 
-For the KNN model discussed below, we choose for Under-sampling. The results based on the under-sampled data are discussed here. The number of observations that are Food secure and Food insecure is now 35635 and 35837 respectively. Now the data is balanced and we continue with data pre-processing. 
+For the KNN model discussed below, we choose for Under-sampling. The results based on both sampling technique in data are discussed here. Now the data is balanced and we continue with data pre-processing. 
 
 ```{r, results='markup', echo=FALSE}
 data_balanced_under <- as.data.frame(ovun.sample(FS_Status ~ ., data = num_data, method = "both", N = nrow(num_data), seed = 1)$data)
@@ -497,13 +497,16 @@ library(class)
 ```
 
 ##### Building KNN Model
+
+
 ```{r, results='markup'}
 # create an empty dataframe to store the results from confusion matrices
 ResultDf = data.frame( k=numeric(0), Total.Accuracy= numeric(0), row.names = NULL )
 ```
 
 ```{r, results='hide', echo=FALSE}
-for (kval in 3:16) 
+kseq <- seq(3,15,2)
+for (kval in kseq) 
   {
   print( paste("k = ", kval) )
   knn_pred <- knn(train = knn_training, test = knn_test, cl=knn.trainLabels, k=kval)
@@ -540,25 +543,32 @@ ggplot(ResultDf,aes(x = k, y = Total.Accuracy)) +
   labs(title = "Accuracy vs k")
 ```
 
+From the above table and graph, it is quite clear that k=15 KNN model gives the most accuracy. Since the predicted variable is binary, we take into consideration k values which are odd. 
+
+From the above results, the least accuracy is when k = 3, which is 81.49% and the maximum is for when k = 15 and it goes high up to 83.59%. Now we use confusion matrix of KNN model when k=15, to derive more information. 
+
 ```{r, results='markup', echo=FALSE}
 library(class)
-knn_pred <- knn(train = knn_training, test = knn_test, cl=knn.trainLabels, k=6)
+knn_pred <- knn(train = knn_training, test = knn_test, cl=knn.trainLabels, k=15)
 knn_crosst <- gmodels::CrossTable(x = knn.testLabels, y = knn_pred, prop.chisq = FALSE)
-
 ```
+
+*Total Number of Observations = 23430.
+*True Negative = 9145 :- 39% of the observations were correctly predicted as NOT Food Insecure
+*True Positive = 9912 :- 42% are correctly identified as Food Insecure.
+*There were 1807 cases of False Negatives (FN). The FN’s poses a potential threat for the reason that model predicts 8% of the total observations as Food Secure, but was actually food insecure and the main focus to increase the accuracy of the model is to reduce FN’s.
+*There were 2556 cases of False Positives (FP) meaning 11% were actually food secure in nature but got predicted as food insecure. 
+*The total accuracy of the model is 83.59 % ((TN+TP)/Total) which shows that the model is good. But still there is scope of improvement.
+
 
 ```{r, results='markup'}
-xkabledply(data.frame(cm$byClass), title=paste("k = ",6))
+xkabledply(data.frame(cm$byClass), title=paste("k = ",15))
 ```
 
-Total Number of Observations = 23430.
-True Negative = 11040 :- 47% of the observations were correctly predicted as NOT Food Insecure
-True Positive = 8537 :- 36.45% are correctly identified as Food Insecure.
-There were 3164 cases of False Negatives (FN). The FN’s poses a potential threat for the reason that model predicts 13.50% of the total observations as Food Secure, but was actually food insecure and the main focus to increase the accuracy of the model is to reduce FN’s.
-There were 679 cases of False Positives (FP) meaning 679 cases were actually food secure in nature but got predicted as food insecure. 
-The total accuracy of the model is 83.59 % ((TN+TP)/Total) which shows that the model is good. But still there is scope of improvement.
+# KNN Model: Conclusion 
+Sensitivity is designate a food insecure individual as Food Insecure.A highly sensitive test means that there are few false negative results, and thus fewer cases of Food Insecurity are missed. For this model the Sensitivity is `r cm$byClass[1]*100`%
 
-
+Specificity is designate a food secure individual as negative. A high specificity makes sure that, the projects for eradicating Food Insecurity focuses on the right population. Specificity for this model is `r cm$byClass[2]*100`%
 
 #### Trees
 
