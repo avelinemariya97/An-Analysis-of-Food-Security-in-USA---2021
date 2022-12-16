@@ -70,7 +70,7 @@ library(ROSE)
 
 ***
 
-#### Dataset
+# Dataset
 
 We have obtained the data from the US Census website using CPS data. The CSV file contains approximately a hundred thousand observations. 
 
@@ -142,7 +142,7 @@ table(FS_Subset$Ethnicity)
 
 
 
-##### Logistic Regression
+# Logistic Regression
 
 A sort of generalized linear model (GLM) called logistic regression is used in statistical analysis to forecast a binary event (i.e., dependent variable) based on predetermined variables. It estimates the likelihood that an event will occur by fitting data to a logit function.
 
@@ -416,7 +416,7 @@ theme_economist()
 ***
 
 
-#### K-Nearest Neighbors
+# K-Nearest Neighbors
 
 K-Nearest Neighbor is a Supervised ML Algorithm used to solve both Classification and Regression models. K-NN algorithm assumes the similarity between the new case /data and available cases and put the new case into the category that is most similar to the available categories.It is also called a lazy learner algorithm because it does not learn from the training set immediately instead it stores the dataset and at the time of classification, it performs an action on the dataset. KNN models shows high accuracy for classification problems.
 
@@ -565,12 +565,12 @@ knn_crosst <- gmodels::CrossTable(x = knn.testLabels, y = knn_pred, prop.chisq =
 xkabledply(data.frame(cm$byClass), title=paste("k = ",15))
 ```
 
-# KNN Model: Conclusion 
+##### KNN Model: Conclusion 
 Sensitivity is designate a food insecure individual as Food Insecure.A highly sensitive test means that there are few false negative results, and thus fewer cases of Food Insecurity are missed. For this model the Sensitivity is `r cm$byClass[1]*100`%
 
 Specificity is designate a food secure individual as negative. A high specificity makes sure that, the projects for eradicating Food Insecurity focuses on the right population. Specificity for this model is `r cm$byClass[2]*100`%
 
-#### Trees
+# Trees
 
 ```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 # Loading package
@@ -637,9 +637,20 @@ table_mat <- table(predict_unseen, test$FS_Status)
 table_mat[2:1,2:1]
 ```
 
-#### Conclusions and further recommendations
+# Conclusions and further recommendations
 
 SNAP is the most important factor in food security in our models. In future, We could remove SNAP or take SNAP longitudinally to make some analysis; as the correlation between SNAP and food insecurity is almost tautological - Only a food insecure person would have SNAP and Food secure person won't have SNAP.
 
 We saw that KNN performs better than other models for these factors.
+
+# References
+
+•	https://www2.census.gov/programs-surveys/cps/datasets/2021/supp/dec21pub.csv
+•	https://www.census.gov/data/datasets/time-series/demo/cps/cps-supp_cps-repwgt/cps-food-security.html
+•	https://www.ers.usda.gov/data-products/food-security-in-the-united-states/
+•	https://r4ds.had.co.nz/exploratory-data-analysis.html
+•	https://www.webpages.uidaho.edu/~stevel/519/How%20to%20get%20correlation%20between%20two%20categorical%20variable%20and%20a%20categorical%20variable%20and%20continuous%20variable.html
+•	http://statseducation.com/Introduction-to-R/modules/graphics/cont/
+•	https://www.tutorialspoint.com/r/r_mean_median_mode.htm
+
 
